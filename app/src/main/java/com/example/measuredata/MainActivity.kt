@@ -16,11 +16,8 @@
 
 package com.example.measuredata
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,37 +25,27 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
-import com.android.volley.Request
-import com.android.volley.Response
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
 import com.example.measuredata.databinding.ActivityMainBinding
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
-import org.json.JSONObject
-import org.json.JSONTokener
 
 /**
  * Activity displaying the app UI. Notably, this binds data from [MainViewModel] to views on screen,
  * and performs the permission check when enabling measure data.
  */
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity()  {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var permissionLauncher: ActivityResultLauncher<String>
-    var i=0;
-
 
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        getVolley()
-
-//        click.setOnClickListener {
-//            Toast.makeText(this,"it works",Toast.LENGTH_LONG).show()
-//        }
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -93,68 +80,38 @@ class MainActivity : AppCompatActivity()  {
         }
         lifecycleScope.launchWhenStarted {
             viewModel.heartRateBpm.collect {
-                if(it>90){
-                    if(i==0) {
-                        say()
-                    }
-
-                 //Log.d("test","it works")
-                }else
-                {
-                    i=0
-                }
-		binding.lastMeasuredValue.text = String.format("%.1f", it)
+                binding.lastMeasuredValue.text = String.format("%.1f", it)
+                show(it)
             }
         }
-        val clicker=findViewById<TextView>(R.id.app_name)
-        clicker.setOnClickListener {
-            val intent= Intent(this,SettingsActivity::class.java)
-            startActivity(intent)
-        }
+
+
+        //show("test")
+//        val dataClient = Wearable.getDataClient(this)
+//        dataClient.dataItems.addOnSuccessListener { dataItems ->
+//            dataItems.forEach { item ->
+//                if (item.uri.path == "/DATA_PATH") {
+//                    val mapItem = DataMapItem.fromDataItem(item)
+//                    mapItem.dataMap.getString("KEY_STRING")?.let { show(it) }
+//
+//                    mapItem.dataMap.getString("KEY_STRING")
+//                    mapItem.dataMap.getBoolean("KEY_BOOLEAN")
+//                    mapItem.dataMap.getInt("KEY_INT")
+//                }
+//            }
+//        }
     }
 
-    private fun getVolley(){
-
-//            val days=findViewById<TextView>(R.id.textView3)
-//            val curl=url+"/api/patient/days/"+patient_id
-            val curl="https://0391-77-246-53-134.ngrok.io/api/wear/settings/"
-            val queue = Volley.newRequestQueue(this)
-            val stringRequest = StringRequest(
-                Request.Method.GET, curl,
-                { response ->
-                    // response
-                    val strResp = response.toString()
-
-//                    val jsonObject = JSONTokener(strResp).nextValue() as JSONObject
-//                    val id = jsonObject.getString("id")
-//
-//                    val employeeName = jsonObject.getString("name")
-//
-//
-//
-//                    val employeeSalary = jsonObject.getString("dob")
-//
-//                    val employeeAge = jsonObject.getString("sex")
-
-
-
-                    // Log.d("API", strResp)
-                    Toast.makeText(this, strResp, Toast.LENGTH_LONG).show()
-                    //days.text="Last panic attack:"+strResp
-                },
-                { error ->
-                    //Log.d("API", "error => $error")
-                    Toast.makeText(this, "failed "+error, Toast.LENGTH_LONG).show()
-                })
-
-// Add the request to the RequestQueue.
-            queue.add(stringRequest)
+    private fun show(ti:Double){
+        val dataClient = Wearable.getDataClient(this)
+        val dataRequest = PutDataMapRequest.create("/DATA_PATH").apply {
+            dataMap.putString("KEY_STRING", ti.toString())
+//            dataMap.putBoolean("KEY_BOOLEAN", true)
+//            dataMap.putInt("KEY_INT", 1)
         }
 
-
-    private fun say() {
-        i=1;
-        Toast.makeText(this,"heart rate is high",Toast.LENGTH_SHORT).show()
+        val putDataRequest = dataRequest.asPutDataRequest()
+        dataClient.putDataItem(putDataRequest)
     }
 
     override fun onStart() {
@@ -179,6 +136,4 @@ class MainActivity : AppCompatActivity()  {
             binding.heart.isVisible = it
         }
     }
-
-
 }

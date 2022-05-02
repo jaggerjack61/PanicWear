@@ -72,8 +72,5 @@ dependencies {
 
     // Material
     implementation 'com.google.android.material:material:1.4.0'
-
-    //Volley
-    implementation("com.android.volley:volley:1.2.1")
-
+    implementation 'com.google.android.gms:play-services-wearable:17.1.0'
 }
